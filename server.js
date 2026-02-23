@@ -23,8 +23,9 @@ mongoose
 // ── Security Middleware ───────────────────────────────────────
 app.use(helmet());                         // Sets secure HTTP headers
 app.use(cors({
-  origin:  process.env.ALLOWED_ORIGIN || '*',
+  origin: (origin, callback) => callback(null, true),
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  credentials: true,
 }));
 
 // ── Logging ───────────────────────────────────────────────────
