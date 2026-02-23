@@ -58,10 +58,13 @@ router.post('/', contactValidation, async (req, res) => {
     });
 
     // 3. Send notification email to Victor
-    await sendNotificationEmail({ firstName, lastName, email, enquiryType, message });
-
-    // 4. Send auto-reply to sender
-    await sendAutoReply({ firstName, email });
+   // 3. Send emails (non-blocking — message is saved even if email fails)
+    try {
+      await sendNotificationEmail({ firstName, lastName, email, enquiryType, message });
+      await sendAutoReply({ firstName, email });
+    } catch (emailErr) {
+      console.error('Email sending failed (message still saved):', emailErr.message);
+    }
 
     return res.status(201).json({
       success: true,
