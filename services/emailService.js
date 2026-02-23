@@ -1,18 +1,33 @@
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const FROM_EMAIL = 'onboarding@resend.dev';
-const TO_EMAIL   = process.env.EMAIL_TO;
-
 /**
- * Send notification email to Victor when a new message arrives
+ * Email service using Resend HTTP API directly (no SDK)
+ * Works on Railway which blocks SMTP but allows HTTPS fetch
  */
-async function sendNotificationEmail(data) {
-  const { firstName, lastName, email, enquiryType, message } = data;
 
-  await resend.emails.send({
-    from:    FROM_EMAIL,
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL     = 'onboarding@resend.dev';
+const TO_EMAIL       = process.env.EMAIL_TO;
+
+async function sendEmail({ to, subject, html }) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Resend API error: ${JSON.stringify(data)}`);
+  }
+
+  return data;
+}
+
+async function sendNotificationEmail({ firstName, lastName, email, enquiryType, message }) {
+  return sendEmail({
     to:      TO_EMAIL,
     subject: `[Portfolio] New ${enquiryType} from ${firstName} ${lastName}`,
     html: `
@@ -47,14 +62,8 @@ async function sendNotificationEmail(data) {
   });
 }
 
-/**
- * Send auto-reply confirmation to the person who submitted the form
- */
-async function sendAutoReply(data) {
-  const { firstName, email } = data;
-
-  await resend.emails.send({
-    from:    FROM_EMAIL,
+async function sendAutoReply({ firstName, email }) {
+  return sendEmail({
     to:      email,
     subject: `Thanks for reaching out, ${firstName}!`,
     html: `
