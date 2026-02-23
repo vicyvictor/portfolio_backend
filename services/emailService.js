@@ -1,16 +1,9 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create reusable transporter (Gmail SMTP)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_EMAIL = 'onboarding@resend.dev';
+const TO_EMAIL   = process.env.EMAIL_TO;
 
 /**
  * Send notification email to Victor when a new message arrives
@@ -18,9 +11,9 @@ const transporter = nodemailer.createTransport({
 async function sendNotificationEmail(data) {
   const { firstName, lastName, email, enquiryType, message } = data;
 
-  await transporter.sendMail({
-    from:    `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-    to:      process.env.EMAIL_TO,
+  await resend.emails.send({
+    from:    FROM_EMAIL,
+    to:      TO_EMAIL,
     subject: `[Portfolio] New ${enquiryType} from ${firstName} ${lastName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f7f6f2;border-radius:8px;overflow:hidden;">
@@ -29,12 +22,18 @@ async function sendNotificationEmail(data) {
         </div>
         <div style="padding:32px;background:#fff;">
           <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;width:140px;">Name</td>
-                <td style="padding:8px 0;font-size:0.95rem;color:#0c0d0a;">${firstName} ${lastName}</td></tr>
-            <tr><td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;">Email</td>
-                <td style="padding:8px 0;"><a href="mailto:${email}" style="color:#1a56db;">${email}</a></td></tr>
-            <tr><td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;">Enquiry</td>
-                <td style="padding:8px 0;font-size:0.95rem;color:#0c0d0a;">${enquiryType}</td></tr>
+            <tr>
+              <td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;width:140px;">Name</td>
+              <td style="padding:8px 0;font-size:0.95rem;color:#0c0d0a;">${firstName} ${lastName}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;">Email</td>
+              <td style="padding:8px 0;"><a href="mailto:${email}" style="color:#1a56db;">${email}</a></td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;">Enquiry</td>
+              <td style="padding:8px 0;font-size:0.95rem;color:#0c0d0a;">${enquiryType}</td>
+            </tr>
           </table>
           <hr style="border:none;border-top:1px solid #e3e1d9;margin:20px 0;"/>
           <p style="font-size:0.8rem;color:#9a9a90;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Message</p>
@@ -54,8 +53,8 @@ async function sendNotificationEmail(data) {
 async function sendAutoReply(data) {
   const { firstName, email } = data;
 
-  await transporter.sendMail({
-    from:    `"Victor Maingi" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from:    FROM_EMAIL,
     to:      email,
     subject: `Thanks for reaching out, ${firstName}!`,
     html: `
@@ -68,7 +67,7 @@ async function sendAutoReply(data) {
           <p style="font-size:1rem;color:#0c0d0a;">Hi ${firstName},</p>
           <p style="font-size:0.97rem;color:#58584f;line-height:1.8;">Thank you for getting in touch! I've received your message and will get back to you within <strong>24 hours</strong>.</p>
           <p style="font-size:0.97rem;color:#58584f;line-height:1.8;">In the meantime, feel free to connect with me on LinkedIn or check out my GitHub.</p>
-          <div style="margin:28px 0;display:flex;gap:12px;">
+          <div style="margin:28px 0;">
             <a href="https://github.com/vicyvictor" style="display:inline-block;background:#0a2540;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">GitHub</a>
             <a href="https://www.linkedin.com/in/victor-m-0b757a23b" style="display:inline-block;background:#1a56db;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-left:10px;">LinkedIn</a>
           </div>
